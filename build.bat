@@ -5,11 +5,15 @@ set common_flags=-nologo -GR -EHa -FC -Zi
 set release_flags=-O2
 set debug_flags=-Od -DHANDMADE_INTERNAL=1
 set linker_flags=/DLL
-if "%1"=="" (
-    echo Need filename to build
+set filename=controller_mouse.cpp
+if not "%1" == "" (
+    set filename=controller_mouse.cpp
+
 ) else (
+
     if not exist build mkdir build
     pushd build
-        cl %warnings% %debug_flags% %common_flags% ..\%1 /link %common_linker_flags%
+        cl %warnings% %debug_flags% %common_flags% ..\controller_mouse.cpp /link %common_linker_flags% ^
+             Shell32.lib User32.lib Gdiplus.lib Gdi32.lib
     popd
 )
