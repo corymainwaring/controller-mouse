@@ -46,11 +46,13 @@ internal void Win32LoadXInput()
         xInputLibrary = LoadLibrary("xinput9_1_0.dll");
     }
     if(xInputLibrary) {
-        XInputGetStateEx = (x_input_get_state_ex *)GetProcAddress( xInputLibrary, (LPCSTR)100 );
+        XInputGetStateEx = (x_input_get_state_ex *)GetProcAddress( xInputLibrary,
+                                                                   (LPCSTR)100 );
         if (!XInputGetStateEx) {
             XInputGetStateEx = XInputGetStateExStub;
         }
-        XInputSetState = (x_input_set_state *)GetProcAddress(xInputLibrary, "XInputSetState");
+        XInputSetState = (x_input_set_state *)GetProcAddress(xInputLibrary,
+                                                             "XInputSetState");
         if (!XInputSetState) {
             XInputSetState = XInputSetStateStub;
         }
@@ -65,11 +67,11 @@ internal void Win32LoadXInput()
 void SendMouse(DWORD Flags, LONG X, LONG Y, DWORD data)
 {
     INPUT Input = {};
-    Input.type = INPUT_MOUSE;
-    Input.mi.dx = X;
-    Input.mi.dy = Y;
-    Input.mi.dwFlags = Flags;
-    Input.mi.mouseData = data;
+    Input.type          = INPUT_MOUSE;
+    Input.mi.dx         = X;
+    Input.mi.dy         = Y;
+    Input.mi.dwFlags    = Flags;
+    Input.mi.mouseData  = data;
     SendInput( 1, &Input, sizeof(INPUT) );
 }
 
@@ -101,26 +103,30 @@ void SendMouseUp(bool32 IsLeft)
     SendMouse(Flags, 0, 0, 0);
 }
 
-void SendMouseWheel(real32 Clicks)
+void SendMouseWheel(real32 Clicks, bool Horizontal)
 {
-    SendMouse( MOUSEEVENTF_WHEEL, 0, 0, (uint32)(Clicks * 40) );
+    DWORD Event = MOUSEEVENTF_WHEEL;
+    if (Horizontal) {
+        Event = MOUSEEVENTF_HWHEEL;
+    }
+    SendMouse( Event, 0, 0, (uint32)(Clicks * 40) );
 }
 
 void SendKeyDown(uint16 KeyCode)
 {
     INPUT Input = {};
-    Input.type = INPUT_KEYBOARD;
-    Input.ki.wVk = KeyCode;
-    Input.ki.dwFlags = 0;
+    Input.type          = INPUT_KEYBOARD;
+    Input.ki.wVk        = KeyCode;
+    Input.ki.dwFlags    = 0;
     SendInput( 1, &Input, sizeof(INPUT) );
 }
 
 void SendKeyUp(uint16 KeyCode)
 {
     INPUT Input = {};
-    Input.type = INPUT_KEYBOARD;
-    Input.ki.wVk = KeyCode;
-    Input.ki.dwFlags = KEYEVENTF_KEYUP;
+    Input.type          = INPUT_KEYBOARD;
+    Input.ki.wVk        = KeyCode;
+    Input.ki.dwFlags    = KEYEVENTF_KEYUP;
     SendInput( 1, &Input, sizeof(INPUT) );
 }
 
@@ -135,27 +141,35 @@ uint16 PressKey(uint16 KeyCode)
 void InputCharacter(uint16 Key, uint8 Modifiers)
 {
     if (Modifiers) {
-        if (Modifiers & modifiers::Control)
+        if (Modifiers & modifiers::Control) {
             SendKeyDown(VK_CONTROL);
-        if (Modifiers & modifiers::Shift)
+        }
+        if (Modifiers & modifiers::Shift) {
             SendKeyDown(VK_SHIFT);
-        if (Modifiers & modifiers::Alt)
+        }
+        if (Modifiers & modifiers::Alt) {
             SendKeyDown(VK_MENU);
-        if (Modifiers & modifiers::Windows)
+        }
+        if (Modifiers & modifiers::Windows) {
             SendKeyDown(VK_LWIN);
+        }
     }
 
     PressKey(Key);
 
     if (Modifiers) {
-        if (Modifiers & modifiers::Control)
+        if (Modifiers & modifiers::Control) {
             SendKeyUp(VK_CONTROL);
-        if (Modifiers & modifiers::Shift)
+        }
+        if (Modifiers & modifiers::Shift) {
             SendKeyUp(VK_SHIFT);
-        if (Modifiers & modifiers::Alt)
+        }
+        if (Modifiers & modifiers::Alt) {
             SendKeyUp(VK_MENU);
-        if (Modifiers & modifiers::Windows)
+        }
+        if (Modifiers & modifiers::Windows) {
             SendKeyUp(VK_LWIN);
+        }
     }
 } // InputCharacter
 
@@ -176,14 +190,14 @@ int32 CalculateStickMagnitude(short StickValue, real32 Multiplier)
 
 void SetButtonState(XINPUT_STATE *State, button *NewButton, button *OldButton, WORD Mask)
 {
-    NewButton->EndedDown = ( (State->Gamepad.wButtons & Mask) != 0 );
-    NewButton->HalfTransitions = (OldButton->EndedDown ^ NewButton->EndedDown) ? 1 : 0;
+    NewButton->EndedDown        = ( (State->Gamepad.wButtons & Mask) != 0 );
+    NewButton->HalfTransitions  = (OldButton->EndedDown ^ NewButton->EndedDown) ? 1 : 0;
 }
 
 void SetAnalogStickState(analog_stick *Stick, int16 X, int16 Y)
 {
-    Stick->X = (real32)X / 32767;
-    Stick->Y = (real32)Y / 32767;
+    Stick->X    = (real32)X / 32767;
+    Stick->Y    = (real32)Y / 32767;
     real32 DeadZone = 0.20f;
     if ( (Stick->X < DeadZone) && (Stick->X > -DeadZone) ) {
         Stick->X = 0;
@@ -224,7 +238,7 @@ void UpdateControllerWithXInputState(controller *   OldController,
     SetButtonState(State, &NewController->X, &OldController->X, XINPUT_GAMEPAD_X);
     SetButtonState(State, &NewController->Y, &OldController->Y, XINPUT_GAMEPAD_Y);
     SetButtonState(State, &NewController->Guide, &OldController->Guide, XINPUT_GAMEPAD_GUIDE);
-    NewController->LeftTrigger = State->Gamepad.bLeftTrigger;
+    NewController->LeftTrigger  = State->Gamepad.bLeftTrigger;
     NewController->RightTrigger = State->Gamepad.bRightTrigger;
     SetAnalogStickState(&NewController->LeftStick, State->Gamepad.sThumbLX,
                         State->Gamepad.sThumbLY);
@@ -251,15 +265,15 @@ internal HWND MakeWindow(HINSTANCE instance, int windowWidth, int windowHeight)
 {
     RECT r = {};
 // TODO(cory): Remove the debug offset so window fits correctly
-    r.right = windowWidth;
-    r.bottom = windowHeight;
+    r.right     = windowWidth;
+    r.bottom    = windowHeight;
 
     // NOTE(cory): Init Window Class
     WNDCLASS windowClass = {};
-    windowClass.style = CS_OWNDC;
-    windowClass.lpfnWndProc = WindowCallback;
-    windowClass.hInstance = instance;
-    windowClass.lpszClassName = "ControllerMouseWindowClass";
+    windowClass.style           = CS_OWNDC;
+    windowClass.lpfnWndProc     = WindowCallback;
+    windowClass.hInstance       = instance;
+    windowClass.lpszClassName   = "ControllerMouseWindowClass";
     if ( !RegisterClass(&windowClass) ) {
         // TODO(cory): Log failure
         return 0;
@@ -300,10 +314,10 @@ internal void Draw(HWND Window, Gdiplus::Bitmap *Background, POINT ptOrigin)
     };
 
     // get the primary monitor's info
-    POINT ptZero = {
+    POINT ptZero            = {
         0
     };
-    HMONITOR hmonPrimary = MonitorFromPoint(ptZero, MONITOR_DEFAULTTOPRIMARY);
+    HMONITOR hmonPrimary    = MonitorFromPoint(ptZero, MONITOR_DEFAULTTOPRIMARY);
     MONITORINFO monitorinfo = {
         0
     };
@@ -313,17 +327,17 @@ internal void Draw(HWND Window, Gdiplus::Bitmap *Background, POINT ptOrigin)
     // center the splash screen in the middle of the primary work area
 
     // create a memory DC holding the splash bitmap
-    HDC hdcScreen = GetDC(NULL);
-    HDC hdcMem = CreateCompatibleDC(hdcScreen);
-    HBITMAP hbmpOld = (HBITMAP) SelectObject(hdcMem, BitmapHandle);
+    HDC hdcScreen       = GetDC(NULL);
+    HDC hdcMem          = CreateCompatibleDC(hdcScreen);
+    HBITMAP hbmpOld     = (HBITMAP) SelectObject(hdcMem, BitmapHandle);
 
     // use the source image's alpha channel for blending
     BLENDFUNCTION blend = {
         0
     };
-    blend.BlendOp = AC_SRC_OVER;
-    blend.SourceConstantAlpha = 255;
-    blend.AlphaFormat = AC_SRC_ALPHA;
+    blend.BlendOp               = AC_SRC_OVER;
+    blend.SourceConstantAlpha   = 255;
+    blend.AlphaFormat           = AC_SRC_ALPHA;
 
     // paint the window (in the right location) with the alpha-blended bitmap
     UpdateLayeredWindow(Window, hdcScreen, &ptOrigin, &sizeSplash,
@@ -350,7 +364,7 @@ void DrawString(Gdiplus::Graphics * Gx,
                 draw_string_format  Format,
                 Gdiplus::PointF     Origin)
 {
-    int SizeNeeded = MultiByteToWideChar( CP_ACP, 0, String, -1, 0, 0);
+    int SizeNeeded      = MultiByteToWideChar( CP_ACP, 0, String, -1, 0, 0);
     wchar_t *WideString =
         (wchar_t *)VirtualAlloc(0, SizeNeeded * sizeof(wchar_t), MEM_COMMIT, PAGE_READWRITE);
     if (!WideString) {
@@ -371,24 +385,34 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CmdLine, 
     Win32LoadXInput();
     HWND Window = MakeWindow(Instance, 480, 480);
 
+    // NOTE(cory): Set Up GDI
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
-    Gdiplus::Bitmap *Background = new Gdiplus::Bitmap(L".\\keyboard_background.png");
+    char EXEPath[MAX_PATH];
+    mw::GetExecutablePath( EXEPath, sizeof(EXEPath) );
+    char ResourcePath[MAX_PATH];
+    mw::ConcatenateStrings( EXEPath, "\\keyboard_background.png", ResourcePath,
+                            sizeof(ResourcePath) );
+    wchar_t WideResourcePath[MAX_PATH];
+    mw::AnsiStringToWideString( ResourcePath, WideResourcePath, sizeof(WideResourcePath) );
+
+    // NOTE(cory): Go grab background!
+    Gdiplus::Bitmap *Background = new Gdiplus::Bitmap(WideResourcePath);
 
     draw_string_format NormalText;
-    NormalText.Font = new Gdiplus::Font(L"Segoe UI",
-                                        52,
-                                        Gdiplus::FontStyleRegular,
-                                        Gdiplus::UnitPoint);
+    NormalText.Font         = new Gdiplus::Font(L"Segoe UI",
+                                                52,
+                                                Gdiplus::FontStyleRegular,
+                                                Gdiplus::UnitPoint);
     NormalText.StringFormat = new Gdiplus::StringFormat;
     NormalText.StringFormat->SetAlignment(Gdiplus::StringAlignmentCenter);
     NormalText.StringFormat->SetLineAlignment(Gdiplus::StringAlignmentCenter);
-    NormalText.Brush = new Gdiplus::SolidBrush( Gdiplus::Color(255, 255, 255, 255) );
+    NormalText.Brush        = new Gdiplus::SolidBrush( Gdiplus::Color(255, 255, 255, 255) );
     draw_string_format BigText;
-    BigText = NormalText;
-    BigText.Font =
+    BigText                 = NormalText;
+    BigText.Font            =
         new Gdiplus::Font(L"Segoe UI", 75, Gdiplus::FontStyleRegular, Gdiplus::UnitPoint);
 
     Gdiplus::Bitmap *NewBG = Background->Clone( 0, 0,
@@ -400,49 +424,53 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CmdLine, 
     Gdiplus::Color ClearColor(0,0,0,0);
     Gdiplus::CachedBitmap CachedBackground(Background, &Gx);
 
-    bool32 MouseLeftDown = false;
-    bool32 MouseRightDown = false;
-    bool32 Paused = false;
-    uint32 PauseWaitTicks = 0;
+    // NOTE(cory): Hide Window and Clear out Background for Startup
+    Gx.Clear(ClearColor);
+    Hide(Window);
 
-    controller Controller1 = {};
+    bool32 MouseLeftDown    = false;
+    bool32 MouseRightDown   = false;
+    bool32 Paused           = false;
+    uint32 PauseWaitTicks   = 0;
+
+    controller Controller1  = {};
     controller Controller2 = {};
-    controller *NewController = &Controller1;
-    controller *OldController = &Controller2;
+    controller *NewController   = &Controller1;
+    controller *OldController   = &Controller2;
 
-    bool32 TextInputMode = false;
+    bool32 TextInputMode        = false;
     char Input[2];
-    Input[0] = 0;
-    Input[1] = 0;
-    char CurrentInput = 0;
-    bool32 TextInputUpperCase = false;
+    Input[0]    = 0;
+    Input[1]    = 0;
+    char CurrentInput           = 0;
+    bool32 TextInputUpperCase   = false;
 
-    uint16 RepeatKey = 0;
-    button *RepeatButton = 0;
-    uint32 RepeatTicks = 0;
+    uint16 RepeatKey            = 0;
+    button *RepeatButton        = 0;
+    uint32 RepeatTicks          = 0;
 
     while(true) {
         Sleep(16);
 
         XINPUT_STATE State = {};
-        DWORD Result = XInputGetStateEx(0, &State);
+        DWORD Result        = XInputGetStateEx(0, &State);
 
-        controller *Temp = OldController;
-        OldController = NewController;
-        NewController = Temp;
+        controller *Temp    = OldController;
+        OldController   = NewController;
+        NewController   = Temp;
 
         UpdateControllerWithXInputState(OldController, NewController, &State);
 
         if (Result == ERROR_SUCCESS) {
             if ( (PauseWaitTicks == 0)
-                 && (NewController->LeftTrigger > 0) && NewController->RightTrigger
+                 && (NewController->LeftTrigger > 0) && (NewController->RightTrigger > 0)
                  && ButtonDown(NewController->Start) && ButtonDown(NewController->Back) ) {
                 if ( ButtonDown(NewController->LeftShoulder)
                      && ButtonDown(NewController->RightShoulder) ) {
                     break;
                 }
-                Paused = !Paused;
-                PauseWaitTicks = 30;
+                Paused          = !Paused;
+                PauseWaitTicks  = 30;
                 continue;
             }
             if (PauseWaitTicks > 0) {
@@ -450,12 +478,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CmdLine, 
             }
             if (Paused) {
                 Hide(Window);
-                TextInputMode = false;
-                CurrentInput = 0;
-                TextInputUpperCase = false;
-                RepeatKey = 0;
-                RepeatButton = 0;
-                RepeatTicks = 0;
+                TextInputMode       = false;
+                CurrentInput        = 0;
+                TextInputUpperCase  = false;
+                RepeatKey           = 0;
+                RepeatButton        = 0;
+                RepeatTicks         = 0;
                 continue;
             }
             if ( ButtonPressed(NewController->Guide) ) {
@@ -479,16 +507,16 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CmdLine, 
                     Page += 3;
                 }
 
-                Gdiplus::PointF *PositionStart = KeyPositions;
-                int NumKeys = 16;
-                int StartIndex = 0;
-                draw_string_format Format = NormalText;
+                Gdiplus::PointF *PositionStart  = KeyPositions;
+                int NumKeys                     = 16;
+                int StartIndex                  = 0;
+                draw_string_format Format       = NormalText;
 
                 if (CurrentInput > 0) {
-                    StartIndex = (4 * Input[0]);
-                    PositionStart = InputTwoPositions;
-                    NumKeys = 4;
-                    Format = BigText;
+                    StartIndex      = (4 * Input[0]);
+                    PositionStart   = InputTwoPositions;
+                    NumKeys         = 4;
+                    Format          = BigText;
                 }
 
                 key *KeyPage = KeyboardArray[Page];
@@ -513,37 +541,37 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CmdLine, 
                     Input[0] = Direction - 1;
                     CurrentInput++;
                 } else if ( (CurrentInput == 1) && (Direction > 0) ) {
-                    Input[1] = Direction - 1;
-                    int Entry = Input[0] * 4 + Input[1];
-                    key InputKey = KeyboardArray[Page][Entry];
+                    Input[1]        = Direction - 1;
+                    int Entry       = Input[0] * 4 + Input[1];
+                    key InputKey    = KeyboardArray[Page][Entry];
                     InputCharacter(InputKey.Keycode, InputKey.Modifiers);
-                    CurrentInput = 0;
+                    CurrentInput    = 0;
                 }
                 int RepeatWaitTicks = 25;
                 if ( !RepeatButton && ButtonDown(NewController->RightShoulder) ) {
-                    RepeatKey = PressKey(VK_SPACE);
-                    RepeatButton = &NewController->RightShoulder;
-                    RepeatTicks = RepeatWaitTicks;
+                    RepeatKey       = PressKey(VK_SPACE);
+                    RepeatButton    = &NewController->RightShoulder;
+                    RepeatTicks     = RepeatWaitTicks;
                 } else if ( !RepeatButton && ButtonDown(NewController->LeftShoulder) ) {
-                    RepeatKey = PressKey(VK_BACK);
-                    RepeatButton = &NewController->LeftShoulder;
-                    RepeatTicks = RepeatWaitTicks;
+                    RepeatKey       = PressKey(VK_BACK);
+                    RepeatButton    = &NewController->LeftShoulder;
+                    RepeatTicks     = RepeatWaitTicks;
                 } else if ( !RepeatButton && ButtonDown(NewController->Left) ) {
-                    RepeatKey = PressKey(VK_LEFT);
-                    RepeatButton = &NewController->Left;
-                    RepeatTicks = RepeatWaitTicks;
+                    RepeatKey       = PressKey(VK_LEFT);
+                    RepeatButton    = &NewController->Left;
+                    RepeatTicks     = RepeatWaitTicks;
                 } else if ( !RepeatButton && ButtonDown(NewController->Right) ) {
-                    RepeatKey = PressKey(VK_RIGHT);
-                    RepeatButton = &NewController->Right;
-                    RepeatTicks = RepeatWaitTicks;
+                    RepeatKey       = PressKey(VK_RIGHT);
+                    RepeatButton    = &NewController->Right;
+                    RepeatTicks     = RepeatWaitTicks;
                 } else if ( !RepeatButton && ButtonDown(NewController->Up) ) {
-                    RepeatKey = PressKey(VK_UP);
-                    RepeatButton = &NewController->Up;
-                    RepeatTicks = RepeatWaitTicks;
+                    RepeatKey       = PressKey(VK_UP);
+                    RepeatButton    = &NewController->Up;
+                    RepeatTicks     = RepeatWaitTicks;
                 } else if ( !RepeatButton && ButtonDown(NewController->Down) ) {
-                    RepeatKey = PressKey(VK_DOWN);
-                    RepeatButton = &NewController->Down;
-                    RepeatTicks = RepeatWaitTicks;
+                    RepeatKey       = PressKey(VK_DOWN);
+                    RepeatButton    = &NewController->Down;
+                    RepeatTicks     = RepeatWaitTicks;
                 }
 
                 if (RepeatTicks > 0) {
@@ -587,27 +615,30 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CmdLine, 
                     InputCharacter('P', modifiers::Shift | modifiers::Windows);
                 }
                 if ( ButtonPressed(NewController->Y) ) {
-                    Input[0] = 0;
-                    Input[1] = 0;
-                    CurrentInput = 0;
-                    RepeatKey = 0;
-                    RepeatTicks = 0;
-                    RepeatButton = 0;
-                    TextInputMode = true;
+                    Input[0]        = 0;
+                    Input[1]        = 0;
+                    CurrentInput    = 0;
+                    RepeatKey       = 0;
+                    RepeatTicks     = 0;
+                    RepeatButton    = 0;
+                    TextInputMode   = true;
                     Show(Window);
                     continue;
                 }
 
                 if (NewController->RightStick.Y != 0) {
-                    SendMouseWheel(NewController->RightStick.Y);
+                    SendMouseWheel(NewController->RightStick.Y, false);
+                }
+                if (NewController->RightStick.X != 0) {
+                    SendMouseWheel(NewController->RightStick.X, true);
                 }
 
-                LONG DeltaY = 0;
-                LONG DeltaX = 0;
-                real32 MouseSpeed = 3.0f;
-                MouseSpeed *= (real32)NewController->RightTrigger / 255 + 1;
-                DeltaX = (LONG)(NewController->LeftStick.X * MouseSpeed * MouseSpeed / 2);
-                DeltaY = (LONG)(-NewController->LeftStick.Y * MouseSpeed * MouseSpeed / 2);
+                LONG DeltaY         = 0;
+                LONG DeltaX         = 0;
+                real32 MouseSpeed   = 3.0f;
+                MouseSpeed  *= (real32)NewController->RightTrigger / 255 + 1;
+                DeltaX      = (LONG)(NewController->LeftStick.X * MouseSpeed * MouseSpeed / 2);
+                DeltaY      = (LONG)(-NewController->LeftStick.Y * MouseSpeed * MouseSpeed / 2);
                 MoveMouseRelative(DeltaX, DeltaY);
             }
 
